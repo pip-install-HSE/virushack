@@ -4,3 +4,5 @@ filename_start = path+filename
 filename_phrases = filename_start + '-phrases'
 filename_bin = filename_start + '.bin'
 filename_clusters = filename_start + '-clusters.txt'
+
+# commands = ["начать", "добавить", "далее", "далее", "оплата", "банковской"]
