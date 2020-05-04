@@ -1,12 +1,15 @@
 from vosk import Model, KaldiRecognizer
 from pyaudio import paInt16, PyAudio
+from rnnoise_wrapper import RNNoise
 
 
 class AudioToText:
     def __init__(self):
         self.p = PyAudio()
-        self.stream = self.p.open(format=paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8000)
-        self.rec = KaldiRecognizer(Model('/home/victor/PycharmProjects/virushack/from_audio_to_text_conversion/model'), 16000)
+        self.rate = 16000
+        self.stream = self.p.open(format=paInt16, channels=1, rate=self.rate, input=True, frames_per_buffer=8000)
+        self.rec = KaldiRecognizer(Model('/home/victor/PycharmProjects/virushack/from_audio_to_text_conversion/model'), self.rate)
+        self.denoiser = RNNoise()
         self.start_stream()
 
     def start_stream(self):
@@ -14,9 +17,10 @@ class AudioToText:
 
     def recognize(self):
         data = self.stream.read(2000)
-        if len(data) == 0:
+        filtered_data = self.denoiser.filter(data, sample_rate=self.rate)
+        if len(filtered_data) == 0:
             return
-        if self.rec.AcceptWaveform(data):
+        if self.rec.AcceptWaveform(filtered_data):
             return self.rec.Result()
 
 

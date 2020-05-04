@@ -24,6 +24,7 @@ stop_threads = False
 
 result = None
 
+
 AtT = AudioToText()
 TtC = TextToCommand()
 TtC.set_commands(working_commands)
