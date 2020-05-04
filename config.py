@@ -6,3 +6,5 @@ filename_bin = filename_start + '.bin'
 filename_clusters = filename_start + '-clusters.txt'
 
 # commands = ["начать", "добавить", "далее", "далее", "оплата", "банковской"]
+list_of_product = ["яблоки зеленые", "яблоки красные"]
+working_commands = ["начать", "добавить", "взвесить", "закрыть", "отменить", "далее", "удалить", "банковский"]
