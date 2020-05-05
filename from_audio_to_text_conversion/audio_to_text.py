@@ -11,9 +11,15 @@ class AudioToText:
         self.rec = KaldiRecognizer(Model('/home/victor/PycharmProjects/virushack/from_audio_to_text_conversion/model'), self.rate)
         self.denoiser = RNNoise()
         self.start_stream()
+        self.is_started = False
 
     def start_stream(self):
         self.stream.start_stream()
+        self.is_started = True
+
+    def stop_stream(self):
+        self.stream.stop_stream()
+        self.is_started = False
 
     def recognize(self):
         data = self.stream.read(2000)

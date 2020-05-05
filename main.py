@@ -7,18 +7,26 @@ import threading
 import time
 import random
 
-from command_to_kos import ThereIsNoProductWithCurrentName
-from command_to_kos import find_product, make_action
+from text_to_command_conversion.command_to_kos import ThereIsNoProductWithCurrentName
+from text_to_command_conversion.command_to_kos import find_product, make_action
 from config import working_commands
 from text_to_command_conversion.text_to_command import TextToCommand
 from from_audio_to_text_conversion.audio_to_text import AudioToText
 import os
+import cv2
 
+# Load the cascade
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+
+# To capture video from webcam.
+cap = cv2.VideoCapture(0)
 
 commands = []
 language = 'russian'
 
 mutex_commands = False
+face_recognized = time.time()
+d_face_recognized = 2
 
 stop_threads = False
 
@@ -37,26 +45,44 @@ def answer_to_customer(phrase):
 def face_recognition():
     # here goes some long calculation
     global stop_threads
-    global mutex_commands
-    while (True):
-        while (True):
-            if (not mutex_commands):
-                mutex_commands = True
-                # commands.append(random.uniform(2, 3))
-                mutex_commands = False
+    global face_recognized
+    while True:
+        while True:
+            _, img = cap.read()
+            # Convert to grayscale
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            # Detect the faces
+            faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+            face_recognized = time.time() if len(faces) else face_recognized
+            # Draw the rectangle around each face
+            for (x, y, w, h) in faces:
+                cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            # Display
+            cv2.imshow('img', img)
+            # Stop if escape key is pressed
+            k = cv2.waitKey(30) & 0xff
+            if k == 27:
                 break
-            time.sleep(1e-3)
+            time.sleep(1e-2)
 
-        time.sleep(10)
-        print("Some phrase")
-        if (stop_threads):
+        time.sleep(1e-2)
+        if stop_threads:
             break
 
 
 def speech_recognition():
     global stop_threads
     global mutex_commands
+    global face_recognized
+    global d_face_recogized
     while True:
+        if time.time() - face_recognized > d_face_recognized:
+            print("\nСпасибо за покупки))") if AtT.is_started else None
+            AtT.stop_stream() if AtT.is_started else None
+            time.sleep(1e-3)
+            continue
+        print("\nЗдравствуй, дорогой покупатель!\nРад тебя видеть!)\n") if not AtT.is_started and time.time() - face_recognized < d_face_recognized else None
+        AtT.start_stream() if not AtT.is_started else None
         res = AtT.recognize()
         while True:
             if not mutex_commands:
@@ -89,7 +115,8 @@ def command_handler():
                     check_commands = [i for i in commands_now if i]
                     if len(check_commands) > 0:
                         # answer_to_customer(f"Отлично! Мы что-то поймали")
-                        print(f"Отлично! Мы что-то поймали")
+                        # print(f"Отлично! Мы что-то поймали")
+                        print("Есть! Распознали!")
                         if len(check_commands) == 1:
                             f = False
                             res = []
@@ -105,14 +132,14 @@ def command_handler():
                             except ThereIsNoProductWithCurrentName:
                                 print("Извините, однако у нас нет продуктов с таким именем")
                         else:
-                            print(f"Братиш, выбери из предложенного: {check_commands}")
+                            print(f"Извините, не могли бы Вы уточнить: {check_commands}")
                             # answer_to_customer(f"Братиш, выбери из предложенного: {check_commands}")
                 commands.clear()
                 mutex_commands = False
                 break
             time.sleep(1e-3)
-
-        time.sleep(2)
+        time.sleep(1e-2)
+        # time.sleep(2)
         # print(curr_commands) if curr_commands else None
         curr_commands.clear()
         if (stop_threads):
@@ -129,7 +156,7 @@ def main():
     command_handler_thread.start()
     # wait here for the result to be available before continuing
     speech_recognition_thread.join()
-
+    cap.release()
     # a = 0
     # input(a)
     # stop_threads = True

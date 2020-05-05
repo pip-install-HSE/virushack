@@ -2,6 +2,7 @@ from typing import List
 
 from word2vec import load
 from config import *
+from .command_to_kos import morph
 
 
 def most_common(lst):
@@ -19,6 +20,8 @@ class TextToCommand:
         self.commands = []
 
     def normalize_word(self, word):
+        word = morph.parse(word.lower())[0].normal_form
+        # print(word)
         norm_word = None
         for tag in self.tags:
             try:

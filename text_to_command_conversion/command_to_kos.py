@@ -4,20 +4,46 @@ import time
 import pymorphy2
 from enum import Enum
 
-from config import list_of_product
+from config import dict_of_product, list_of_easy_product, list_of_hard_product
 
 list_of_actions = ["addItem", "addLoyalty", "cancel", "deletePosition", "deleteAll",
                    "deleteTransaction", "payment", "returnAddITem", "sellingMode", "setContact", "startPOS",
                    "stopPOS", "subTotal"]
 
-list_of_commands = ["добавить", 87868]
-
 morph = pymorphy2.MorphAnalyzer()
 
 
-def find_product(text):
+# def find_product(text):
+#     text_words = text.split(' ')
+#     index = 0
+#     for prod in list_of_product:
+#         findProd = 0
+#         prod_words = prod.split(' ')
+#         for p_word in prod_words:
+#             p_word = morph.parse(p_word.lower())
+#             for p_parse in p_word:
+#                 p_word_norm = p_parse.normal_form
+#                 go_out = False
+#                 for t_word in text_words:
+#                     t_word = morph.parse(t_word.lower())
+#                     for t_parse in t_word:
+#                         t_word_norm = t_parse.normal_form
+#                         if p_word_norm in t_word_norm:
+#                             findProd += 1
+#                             go_out = True
+#                             break
+#                     if go_out:
+#                         break
+#                 if go_out:
+#                     break
+#         if findProd == len(prod_words):
+#             return index
+#         index += 1
+#     return None
+
+def find_product(text, list_of_product):
     text_words = text.split(' ')
-    index = 0
+    index = 1
     for prod in list_of_product:
         findProd = 0
         prod_words = prod.split(' ')
@@ -39,9 +65,28 @@ def find_product(text):
                 if go_out:
                     break
         if findProd == len(prod_words):
-            return index
+            return [index, prod]
         index += 1
     return None
+
+
+def easy_find_product(text):
+    product = find_product(text, list_of_easy_product)
+    if product:
+        return product
+    else:
+        product = find_product(text, list_of_hard_product)
+        if product:
+            product.append(find_product(text, dict_of_product[product[1]]))
+            if product[2]:
+                product[1] += ' ' + product[2][1]
+                product[0] = product[0]*10 + product[2][0]
+                product.pop(2)
+                return product
+            else:
+                print(f"Выбери продукт: {[f'{product[1]} {item}' for item in dict_of_product[product[1]]]}")
+                return False
+        return None
 
 
 class subType(str, Enum):
@@ -63,11 +108,12 @@ class ThereIsNoProductWithCurrentName(Exception):
 
 
 def check_product_exist(text):
-    product_id = find_product(text)
-    if product_id:
-        return product_id
-    else:
+    product = easy_find_product(text)
+    if product:
+        return product[0]
+    elif product is None:
         raise ThereIsNoProductWithCurrentName("Нет такого продукта!")
+    raise ThereIsNoProductWithCurrentName()
 
 
 def make_action(command, support_object=0):
@@ -113,7 +159,7 @@ def make_action(command, support_object=0):
         data["action"] = "payment"
         data["amount"] = int(command[1])
         data["paymentType"] = command[2]
-    elif "вернуться" in command[0]:
+    elif "назад" in command[0]:
         data["action"] = "returnAddITem"
     elif "банковский" in command[0]:
         data["action"] = "payment"
