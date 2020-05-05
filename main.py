@@ -7,7 +7,7 @@ import threading
 import time
 import random
 
-from text_to_command_conversion.command_to_kos import ThereIsNoProductWithCurrentName
+from text_to_command_conversion.command_to_kos import ThereIsNoProductWithCurrentName, TryOneMoreTime
 from text_to_command_conversion.command_to_kos import find_product, make_action
 from config import working_commands
 from text_to_command_conversion.text_to_command import TextToCommand
@@ -96,7 +96,7 @@ def speech_recognition():
                 mutex_commands = False
                 break
             time.sleep(1e-3)
-        print(commands) if commands else None
+        # print(commands) if commands else None
         if stop_threads:
             break
 
@@ -112,25 +112,17 @@ def command_handler():
                 curr_commands = commands.copy()
                 for text in curr_commands:
                     commands_now = TtC.get_command(text)
-                    check_commands = [i for i in commands_now if i]
+                    check_commands = list(set([i for i in commands_now if i]))
                     if len(check_commands) > 0:
                         # answer_to_customer(f"Отлично! Мы что-то поймали")
                         # print(f"Отлично! Мы что-то поймали")
-                        print("Есть! Распознали!")
+                        # print("Есть! Распознали!")
                         if len(check_commands) == 1:
-                            f = False
-                            res = []
-                            for i, word in enumerate(text.split()):
-                                if commands_now[i]:
-                                    f = True
-                                    # res.append(commands_now[i])
-                                elif f:
-                                    res.append(word)
-                            print(res)
+                            print("\n", *commands)
                             try:
                                 make_action([check_commands[0], text])
-                            except ThereIsNoProductWithCurrentName:
-                                print("Извините, однако у нас нет продуктов с таким именем")
+                            except (ThereIsNoProductWithCurrentName, TryOneMoreTime):
+                                pass
                         else:
                             print(f"Извините, не могли бы Вы уточнить: {check_commands}")
                             # answer_to_customer(f"Братиш, выбери из предложенного: {check_commands}")

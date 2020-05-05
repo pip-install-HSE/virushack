@@ -106,12 +106,15 @@ def getDataFromKSO():
 class ThereIsNoProductWithCurrentName(Exception):
     pass
 
+class TryOneMoreTime(Exception):
+    pass
 
 def check_product_exist(text):
     product = easy_find_product(text)
     if product:
         return product[0]
     elif product is None:
+        print("Извините, однако у нас нет продуктов с таким именем")
         raise ThereIsNoProductWithCurrentName("Нет такого продукта!")
     raise ThereIsNoProductWithCurrentName()
 
